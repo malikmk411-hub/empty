@@ -7,8 +7,6 @@ export type Json =
   | Json[]
 
 export type Database = {
-  // Allows to automatically instantiate createClient with right options
-  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
     PostgrestVersion: "14.5"
   }
@@ -70,6 +68,7 @@ export type Database = {
           image_url: string | null
           is_active: boolean
           name: string
+          parent_id: string | null
           slug: string
           sort_order: number
           updated_at: string
@@ -81,6 +80,7 @@ export type Database = {
           image_url?: string | null
           is_active?: boolean
           name: string
+          parent_id?: string | null
           slug: string
           sort_order?: number
           updated_at?: string
@@ -92,15 +92,164 @@ export type Database = {
           image_url?: string | null
           is_active?: boolean
           name?: string
+          parent_id?: string | null
           slug?: string
           sort_order?: number
           updated_at?: string
         }
+        Relationships: [
+          {
+            foreignKeyName: "categories_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
+      coupons: {
+        Row: {
+          code: string
+          created_at: string
+          discount_id: string
+          id: string
+          is_active: boolean
+          max_uses: number | null
+          max_uses_per_user: number
+          times_used: number
+          updated_at: string
+          valid_from: string
+          valid_until: string | null
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          discount_id: string
+          id?: string
+          is_active?: boolean
+          max_uses?: number | null
+          max_uses_per_user?: number
+          times_used?: number
+          updated_at?: string
+          valid_from?: string
+          valid_until?: string | null
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          discount_id?: string
+          id?: string
+          is_active?: boolean
+          max_uses?: number | null
+          max_uses_per_user?: number
+          times_used?: number
+          updated_at?: string
+          valid_from?: string
+          valid_until?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "coupons_discount_id_fkey"
+            columns: ["discount_id"]
+            isOneToOne: false
+            referencedRelation: "discounts"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
+      discounts: {
+        Row: {
+          created_at: string
+          id: string
+          is_active: boolean
+          max_discount_amount: number | null
+          min_order_value: number | null
+          name: string
+          scope: Database["public"]["Enums"]["discount_scope"]
+          target_id: string | null
+          type: Database["public"]["Enums"]["discount_type"]
+          updated_at: string
+          value: number
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          max_discount_amount?: number | null
+          min_order_value?: number | null
+          name: string
+          scope: Database["public"]["Enums"]["discount_scope"]
+          target_id?: string | null
+          type: Database["public"]["Enums"]["discount_type"]
+          updated_at?: string
+          value: number
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          max_discount_amount?: number | null
+          min_order_value?: number | null
+          name?: string
+          scope?: Database["public"]["Enums"]["discount_scope"]
+          target_id?: string | null
+          type?: Database["public"]["Enums"]["discount_type"]
+          updated_at?: string
+          value?: number
+        }
         Relationships: []
+      }
+      inventory_logs: {
+        Row: {
+          change_reason: Database["public"]["Enums"]["inventory_change_reason"]
+          created_at: string
+          id: string
+          notes: string | null
+          quantity_change: number
+          reference_id: string | null
+          reference_type: string | null
+          stock_after: number
+          stock_before: number
+          variant_id: string
+        }
+        Insert: {
+          change_reason: Database["public"]["Enums"]["inventory_change_reason"]
+          created_at?: string
+          id?: string
+          notes?: string | null
+          quantity_change: number
+          reference_id?: string | null
+          reference_type?: string | null
+          stock_after: number
+          stock_before: number
+          variant_id: string
+        }
+        Update: {
+          change_reason?: Database["public"]["Enums"]["inventory_change_reason"]
+          created_at?: string
+          id?: string
+          notes?: string | null
+          quantity_change?: number
+          reference_id?: string | null
+          reference_type?: string | null
+          stock_after?: number
+          stock_before?: number
+          variant_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "inventory_logs_variant_id_fkey"
+            columns: ["variant_id"]
+            isOneToOne: false
+            referencedRelation: "product_variants"
+            referencedColumns: ["id"]
+          }
+        ]
       }
       order_items: {
         Row: {
           created_at: string
+          discount_amount: number
           id: string
           line_total: number
           order_id: string
@@ -111,9 +260,11 @@ export type Database = {
           quantity: number
           size: string | null
           unit_price: number
+          variant_id: string | null
         }
         Insert: {
           created_at?: string
+          discount_amount?: number
           id?: string
           line_total: number
           order_id: string
@@ -124,9 +275,11 @@ export type Database = {
           quantity: number
           size?: string | null
           unit_price: number
+          variant_id?: string | null
         }
         Update: {
           created_at?: string
+          discount_amount?: number
           id?: string
           line_total?: number
           order_id?: string
@@ -137,6 +290,7 @@ export type Database = {
           quantity?: number
           size?: string | null
           unit_price?: number
+          variant_id?: string | null
         }
         Relationships: [
           {
@@ -153,20 +307,30 @@ export type Database = {
             referencedRelation: "products"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "order_items_variant_id_fkey"
+            columns: ["variant_id"]
+            isOneToOne: false
+            referencedRelation: "product_variants"
+            referencedColumns: ["id"]
+          }
         ]
       }
       orders: {
         Row: {
           billing_address: Json | null
+          coupon_code: string | null
           created_at: string
           currency: string
           discount: number
+          discount_id: string | null
           email: string
           id: string
           notes: string | null
           order_number: string
           payment_method: string | null
           payment_ref: string | null
+          payment_status: Database["public"]["Enums"]["payment_status"]
           shipping: number
           shipping_address: Json
           status: Database["public"]["Enums"]["order_status"]
@@ -179,15 +343,18 @@ export type Database = {
         }
         Insert: {
           billing_address?: Json | null
+          coupon_code?: string | null
           created_at?: string
           currency?: string
           discount?: number
+          discount_id?: string | null
           email: string
           id?: string
           notes?: string | null
           order_number?: string
           payment_method?: string | null
           payment_ref?: string | null
+          payment_status?: Database["public"]["Enums"]["payment_status"]
           shipping?: number
           shipping_address: Json
           status?: Database["public"]["Enums"]["order_status"]
@@ -200,15 +367,18 @@ export type Database = {
         }
         Update: {
           billing_address?: Json | null
+          coupon_code?: string | null
           created_at?: string
           currency?: string
           discount?: number
+          discount_id?: string | null
           email?: string
           id?: string
           notes?: string | null
           order_number?: string
           payment_method?: string | null
           payment_ref?: string | null
+          payment_status?: Database["public"]["Enums"]["payment_status"]
           shipping?: number
           shipping_address?: Json
           status?: Database["public"]["Enums"]["order_status"]
@@ -219,29 +389,87 @@ export type Database = {
           updated_at?: string
           user_id?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "orders_discount_id_fkey"
+            columns: ["discount_id"]
+            isOneToOne: false
+            referencedRelation: "discounts"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
+      product_images: {
+        Row: {
+          alt_text: string | null
+          created_at: string
+          display_order: number
+          id: string
+          image_url: string
+          is_primary: boolean
+          product_id: string
+        }
+        Insert: {
+          alt_text?: string | null
+          created_at?: string
+          display_order?: number
+          id?: string
+          image_url: string
+          is_primary?: boolean
+          product_id: string
+        }
+        Update: {
+          alt_text?: string | null
+          created_at?: string
+          display_order?: number
+          id?: string
+          image_url?: string
+          is_primary?: boolean
+          product_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_images_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          }
+        ]
       }
       product_variants: {
         Row: {
+          color: string | null
+          color_hex: string | null
           created_at: string
           id: string
+          is_limited_edition: boolean
           product_id: string
+          reserved_stock: number
           size: string
           sku: string | null
           stock: number
         }
         Insert: {
+          color?: string | null
+          color_hex?: string | null
           created_at?: string
           id?: string
+          is_limited_edition?: boolean
           product_id: string
+          reserved_stock?: number
           size: string
           sku?: string | null
           stock?: number
         }
         Update: {
+          color?: string | null
+          color_hex?: string | null
           created_at?: string
           id?: string
+          is_limited_edition?: boolean
           product_id?: string
+          reserved_stock?: number
           size?: string
           sku?: string | null
           stock?: number
@@ -253,13 +481,14 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "products"
             referencedColumns: ["id"]
-          },
+          }
         ]
       }
       products: {
         Row: {
           care_instructions: string | null
           category_id: string | null
+          compare_at_price: number | null
           created_at: string
           currency: string
           description: string
@@ -268,11 +497,13 @@ export type Database = {
           images: string[]
           is_featured: boolean
           is_new: boolean
+          material: string | null
           name: string
           price: number
           rating_avg: number
           rating_count: number
           sale_price: number | null
+          search_vector: unknown | null
           sku: string | null
           slug: string
           status: Database["public"]["Enums"]["product_status"]
@@ -285,6 +516,7 @@ export type Database = {
         Insert: {
           care_instructions?: string | null
           category_id?: string | null
+          compare_at_price?: number | null
           created_at?: string
           currency?: string
           description?: string
@@ -293,11 +525,13 @@ export type Database = {
           images?: string[]
           is_featured?: boolean
           is_new?: boolean
+          material?: string | null
           name: string
           price: number
           rating_avg?: number
           rating_count?: number
           sale_price?: number | null
+          search_vector?: unknown | null
           sku?: string | null
           slug: string
           status?: Database["public"]["Enums"]["product_status"]
@@ -310,6 +544,7 @@ export type Database = {
         Update: {
           care_instructions?: string | null
           category_id?: string | null
+          compare_at_price?: number | null
           created_at?: string
           currency?: string
           description?: string
@@ -318,11 +553,13 @@ export type Database = {
           images?: string[]
           is_featured?: boolean
           is_new?: boolean
+          material?: string | null
           name?: string
           price?: number
           rating_avg?: number
           rating_count?: number
           sale_price?: number | null
+          search_vector?: unknown | null
           sku?: string | null
           slug?: string
           status?: Database["public"]["Enums"]["product_status"]
@@ -339,7 +576,7 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "categories"
             referencedColumns: ["id"]
-          },
+          }
         ]
       }
       profiles: {
@@ -413,8 +650,79 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "products"
             referencedColumns: ["id"]
-          },
+          }
         ]
+      }
+      stock_reservations: {
+        Row: {
+          created_at: string
+          expires_at: string
+          id: string
+          order_id: string | null
+          quantity: number
+          status: string
+          updated_at: string
+          user_id: string
+          variant_id: string
+        }
+        Insert: {
+          created_at?: string
+          expires_at: string
+          id?: string
+          order_id?: string | null
+          quantity: number
+          status?: string
+          updated_at?: string
+          user_id: string
+          variant_id: string
+        }
+        Update: {
+          created_at?: string
+          expires_at?: string
+          id?: string
+          order_id?: string | null
+          quantity?: number
+          status?: string
+          updated_at?: string
+          user_id?: string
+          variant_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "stock_reservations_variant_id_fkey"
+            columns: ["variant_id"]
+            isOneToOne: false
+            referencedRelation: "product_variants"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
+      store_settings: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          key: string
+          updated_at: string
+          value: Json
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          key: string
+          updated_at?: string
+          value: Json
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          key?: string
+          updated_at?: string
+          value?: Json
+        }
+        Relationships: []
       }
       user_roles: {
         Row: {
@@ -463,7 +771,7 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "products"
             referencedColumns: ["id"]
-          },
+          }
         ]
       }
     }
@@ -471,7 +779,75 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      calculate_coupon_discount: {
+        Args: {
+          p_coupon_code: string
+          p_order_value: number
+          p_product_ids: string[]
+          p_user_id: string
+        }
+        Returns: Json
+      }
+      check_verified_purchase: {
+        Args: {
+          p_product_id: string
+          p_user_id: string
+        }
+        Returns: boolean
+      }
       claim_admin_if_none: { Args: never; Returns: boolean }
+      convert_reservation_to_sale: {
+        Args: {
+          p_reservation_id: string
+          p_order_id: string
+        }
+        Returns: boolean
+      }
+      decrement_stock: {
+        Args: {
+          p_variant_id: string
+          p_quantity: number
+          p_reason: Database["public"]["Enums"]["inventory_change_reason"]
+          p_reference_id: string | null
+          p_reference_type: string | null
+        }
+        Returns: boolean
+      }
+      get_best_selling_products: {
+        Args: {
+          p_limit: number
+          p_days: number
+        }
+        Returns: Json
+      }
+      get_customer_orders: {
+        Args: {
+          p_user_id: string
+          p_limit: number
+        }
+        Returns: Json
+      }
+      get_dashboard_stats: {
+        Args: {
+          p_start_date: string | null
+          p_end_date: string | null
+        }
+        Returns: Json
+      }
+      get_low_stock_products: {
+        Args: {
+          p_threshold: number
+        }
+        Returns: Json
+      }
+      get_order_status_breakdown: { Args: never; Returns: Json }
+      get_revenue_over_time: {
+        Args: {
+          p_interval: string
+          p_days: number
+        }
+        Returns: Json
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -479,10 +855,59 @@ export type Database = {
         }
         Returns: boolean
       }
+      increment_stock: {
+        Args: {
+          p_variant_id: string
+          p_quantity: number
+          p_reason: Database["public"]["Enums"]["inventory_change_reason"]
+          p_reference_id: string | null
+          p_reference_type: string | null
+        }
+        Returns: boolean
+      }
       is_admin: { Args: never; Returns: boolean }
+      refresh_product_rating: {
+        Args: {
+          p_product_id: string
+        }
+        Returns: void
+      }
+      release_expired_reservations: { Args: never; Returns: number }
+      reserve_stock: {
+        Args: {
+          p_variant_id: string
+          p_quantity: number
+          p_user_id: string
+          p_expires_in_minutes: number
+        }
+        Returns: string | null
+      }
+      update_product_search_vector: {
+        Args: {}
+        Returns: void
+      }
+      validate_coupon: {
+        Args: {
+          p_coupon_code: string
+          p_user_id: string
+          p_order_value: number
+        }
+        Returns: Json
+      }
     }
     Enums: {
       app_role: "admin" | "customer"
+      discount_scope: "order" | "product" | "variant" | "category"
+      discount_type: "percentage" | "fixed"
+      inventory_change_reason:
+        | "Restock"
+        | "Purchase"
+        | "Order_Cancellation"
+        | "Manual_Adjustment"
+        | "Inventory_Count"
+        | "Reservation"
+        | "Reservation_Release"
+        | "Reservation_Conversion"
       order_status:
         | "pending"
         | "paid"
@@ -490,6 +915,11 @@ export type Database = {
         | "shipped"
         | "delivered"
         | "cancelled"
+        | "refunded"
+      payment_status:
+        | "pending"
+        | "paid"
+        | "failed"
         | "refunded"
       product_status: "draft" | "active" | "archived"
     }
@@ -620,6 +1050,18 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "customer"],
+      discount_scope: ["order", "product", "variant", "category"],
+      discount_type: ["percentage", "fixed"],
+      inventory_change_reason: [
+        "Restock",
+        "Purchase",
+        "Order_Cancellation",
+        "Manual_Adjustment",
+        "Inventory_Count",
+        "Reservation",
+        "Reservation_Release",
+        "Reservation_Conversion",
+      ],
       order_status: [
         "pending",
         "paid",
@@ -629,6 +1071,7 @@ export const Constants = {
         "cancelled",
         "refunded",
       ],
+      payment_status: ["pending", "paid", "failed", "refunded"],
       product_status: ["draft", "active", "archived"],
     },
   },
